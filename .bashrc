@@ -9,6 +9,7 @@ alias cp='cp -i'
 alias mv='mv -i'
 alias vi='vim'
 alias diff='colordiff'
+alias cat='cat -n'
 
 alias ..='cd ..'
 alias ...='cd ../../../'
