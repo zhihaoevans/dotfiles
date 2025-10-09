@@ -40,11 +40,6 @@ set cursorline
 set scrolloff=10
 set showmatch
 set icon
-nmap J <C-w>j
-nmap H <C-w>h
-nmap K <C-w>k
-nmap L <C-w>l
-nmap W <C-w>w
 nmap ff <C-f>
 vmap ff <C-f>
 nmap bb <C-b>
