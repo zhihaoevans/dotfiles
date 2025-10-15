@@ -1,0 +1,362 @@
+vim9script
+
+# ============================================================================
+# XDG 基础目录配置
+# ============================================================================
+
+# 获取 XDG 环境变量，如果未设置则使用默认值
+var xdg_config = getenv('XDG_CONFIG_HOME') ?? $HOME .. '/.config'
+var xdg_data = getenv('XDG_DATA_HOME') ?? $HOME .. '/.local/share'
+var xdg_state = getenv('XDG_STATE_HOME') ?? $HOME .. '/.local/state'
+var xdg_cache = getenv('XDG_CACHE_HOME') ?? $HOME .. '/.cache'
+
+# 确保 XDG 基础目录存在
+var xdg_base_dirs = [xdg_config, xdg_data, xdg_state, xdg_cache]
+for dir in xdg_base_dirs
+    if !isdirectory(dir)
+        mkdir(dir, 'p')
+        echo 'Created XDG directory: ' .. dir
+    endif
+endfor
+
+# 构建 Vim 相关路径
+var vim_config = xdg_config .. '/vim'
+var vim_data = xdg_data .. '/vim'
+var vim_state = xdg_state .. '/vim'
+var vim_cache = xdg_cache .. '/vim'
+
+# 确保 Vim XDG 目录存在
+var vim_xdg_dirs = [vim_config, vim_data, vim_state, vim_cache]
+for dir in vim_xdg_dirs
+    if !isdirectory(dir)
+        mkdir(dir, 'p')
+        echo 'Created Vim directory: ' .. dir
+    endif
+endfor
+
+# 设置 runtimepath
+execute 'set runtimepath^=' .. vim_config
+execute 'set runtimepath+=' .. vim_data
+execute 'set runtimepath+=' .. vim_config .. '/after'
+
+# 设置 packpath
+execute 'set packpath^=' .. vim_data .. ',' .. vim_config
+execute 'set packpath+=' .. vim_config .. '/after,' .. vim_data .. '/after'
+
+# ============================================================================
+# 数据文件目录配置
+# ============================================================================
+
+# netrw 配置
+g:netrw_home = vim_data
+
+# 创建必要的子目录
+var subdirs_to_create = [
+    vim_config .. '/after',
+    vim_data .. '/autoload',
+    vim_data .. '/plugged',
+    vim_data .. '/spell',
+    vim_state .. '/backup',
+    vim_state .. '/swap',
+    vim_state .. '/undo',
+    vim_state .. '/view',
+    vim_cache
+]
+
+for dir in subdirs_to_create
+    if !isdirectory(dir)
+        mkdir(dir, 'p')
+    endif
+endfor
+
+# 设置备份、交换、撤销文件位置
+execute 'set backupdir=' .. vim_state .. '/backup'
+execute 'set directory=' .. vim_state .. '/swap'
+execute 'set undodir=' .. vim_state .. '/undo'
+execute 'set viewdir=' .. vim_state .. '/view'
+
+# 设置 viminfo 文件位置（仅 Vim，Neovim 不需要）
+if !has("nvim")
+    execute 'set viminfofile=' .. vim_state .. '/viminfo'
+endif
+
+# ============================================================================
+# vim-plug 插件管理器配置
+# ============================================================================
+
+# 自动安装 vim-plug
+var plug_path = vim_data .. '/autoload/plug.vim'
+if empty(glob(plug_path))
+    silent execute '!curl -fLo ' .. plug_path .. ' --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+    autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+# 插件安装（需要使用 legacy 模式）
+# 将插件目录设置为全局变量，以便 legacy 代码可以访问
+g:plugged_dir = vim_data .. '/plugged'
+legacy call plug#begin(g:plugged_dir)
+
+# --- 界面增强 ---
+Plug 'preservim/nerdtree'                    # 文件树
+Plug 'vim-airline/vim-airline'               # 状态栏
+Plug 'vim-airline/vim-airline-themes'        # 状态栏主题
+Plug 'ryanoasis/vim-devicons'                # 文件图标（需要 Nerd Font）
+
+# --- 配色方案 ---
+Plug 'morhetz/gruvbox'                       # Gruvbox 主题
+Plug 'dracula/vim', { 'as': 'dracula' }      # Dracula 主题
+Plug 'joshdick/onedark.vim'                  # One Dark 主题
+
+# --- Git 集成 ---
+Plug 'tpope/vim-fugitive'                    # Git 命令
+Plug 'airblade/vim-gitgutter'                # Git 差异显示
+
+# --- 代码补全与语法 ---
+Plug 'neoclide/coc.nvim', {'branch': 'release'}  # 智能补全
+Plug 'sheerun/vim-polyglot'                  # 多语言语法支持
+
+# --- 代码编辑增强 ---
+Plug 'tpope/vim-surround'                    # 快速修改包围符号
+Plug 'tpope/vim-commentary'                  # 快速注释
+Plug 'jiangmiao/auto-pairs'                  # 自动配对括号
+Plug 'preservim/tagbar'                      # 代码大纲
+
+# --- 搜索与导航 ---
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'                      # 模糊搜索
+Plug 'easymotion/vim-easymotion'             # 快速跳转
+
+# --- 实用工具 ---
+Plug 'mbbill/undotree'                       # 撤销历史树
+Plug 'tpope/vim-repeat'                      # 增强 . 重复命令
+
+legacy call plug#end()
+
+# ============================================================================
+# 基础设置
+# ============================================================================
+
+# --- 外观设置 ---
+set number                      # 显示行号
+set relativenumber              # 相对行号
+set cursorline                  # 高亮当前行
+set showmatch                   # 显示匹配的括号
+set ruler                       # 显示光标位置
+set laststatus=2                # 始终显示状态栏
+set showcmd                     # 显示命令
+set wildmenu                    # 命令行补全增强
+set termguicolors               # 启用真彩色
+
+# --- 编辑设置 ---
+set expandtab                   # 使用空格代替制表符
+set tabstop=4                   # Tab 宽度
+set shiftwidth=4                # 缩进宽度
+set softtabstop=4               # 软 Tab 宽度
+set autoindent                  # 自动缩进
+set smartindent                 # 智能缩进
+set backspace=indent,eol,start  # 退格键行为
+
+# --- 搜索设置 ---
+set incsearch                   # 增量搜索
+set hlsearch                    # 高亮搜索结果
+set ignorecase                  # 搜索忽略大小写
+set smartcase                   # 智能大小写搜索
+
+# --- 文件设置 ---
+set encoding=utf-8              # 编码设置
+set fileencoding=utf-8
+set fileencodings=utf-8,gbk,gb2312,cp936
+set autoread                    # 文件修改后自动读取
+set hidden                      # 允许隐藏未保存的缓冲区
+
+# --- 性能优化 ---
+set updatetime=300              # 更新时间
+set timeoutlen=500              # 映射超时时间
+set lazyredraw                  # 延迟重绘
+
+# --- 备份与撤销 ---
+set backup                      # 启用备份
+set writebackup                 # 写入前备份
+set undofile                    # 持久化撤销
+set swapfile                    # 启用交换文件
+
+# --- 其他设置 ---
+syntax on                       # 语法高亮
+filetype plugin indent on       # 文件类型检测
+set mouse=a                     # 启用鼠标
+set clipboard=unnamed,unnamedplus  # 系统剪贴板
+
+# ============================================================================
+# 主题配置
+# ============================================================================
+
+# 设置背景和配色方案
+set background=dark
+try
+    colorscheme gruvbox
+catch
+    colorscheme desert
+endtry
+
+# ============================================================================
+# 插件配置
+# ============================================================================
+
+# --- NERDTree 配置 ---
+g:NERDTreeShowHidden = 1
+g:NERDTreeMinimalUI = 1
+g:NERDTreeIgnore = ['^\.git$', '^\.DS_Store$']
+g:NERDTreeWinSize = 30
+
+# --- airline 配置 ---
+g:airline_theme = 'gruvbox'
+g:airline_powerline_fonts = 1
+g:airline#extensions#tabline#enabled = 1
+g:airline#extensions#tabline#formatter = 'unique_tail'
+
+# --- GitGutter 配置 ---
+g:gitgutter_enabled = 1
+g:gitgutter_map_keys = 0
+
+# --- fzf 配置 ---
+g:fzf_layout = { 'down': '~40%' }
+g:fzf_preview_window = ['right:50%', 'ctrl-/']
+
+# --- coc.nvim 配置 ---
+g:coc_global_extensions = [
+    'coc-json',
+    'coc-tsserver',
+    'coc-python',
+    'coc-go',
+    'coc-rust-analyzer',
+    'coc-html',
+    'coc-css'
+]
+
+# ============================================================================
+# 键位映射
+# ============================================================================
+
+# Leader 键设置
+g:mapleader = ' '
+g:maplocalleader = ','
+
+# --- 基础映射 ---
+# 保存和退出
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>x :x<CR>
+
+# 取消搜索高亮
+nnoremap <leader>/ :nohlsearch<CR>
+
+# 快速移动
+nnoremap J 5j
+nnoremap K 5k
+vnoremap J 5j
+vnoremap K 5k
+
+# 窗口分割和导航
+nnoremap <leader>v :vsplit<CR>
+nnoremap <leader>h :split<CR>
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+# 缓冲区导航
+nnoremap <leader>bn :bnext<CR>
+nnoremap <leader>bp :bprevious<CR>
+nnoremap <leader>bd :bdelete<CR>
+
+# --- 插件映射 ---
+# NERDTree
+nnoremap <leader>e :NERDTreeToggle<CR>
+nnoremap <leader>f :NERDTreeFind<CR>
+
+# fzf
+nnoremap <leader>p :Files<CR>
+nnoremap <leader>b :Buffers<CR>
+nnoremap <leader>r :Rg<CR>
+nnoremap <leader>l :Lines<CR>
+
+# Tagbar
+nnoremap <leader>t :TagbarToggle<CR>
+
+# UndoTree
+nnoremap <leader>u :UndotreeToggle<CR>
+
+# Git (fugitive)
+nnoremap <leader>gs :Git status<CR>
+nnoremap <leader>gc :Git commit<CR>
+nnoremap <leader>gp :Git push<CR>
+nnoremap <leader>gl :Git log<CR>
+
+# coc.nvim 补全相关映射（需要用 legacy 模式）
+legacy inoremap <silent><expr> <TAB>
+      \ coc#pum#visible() ? coc#pum#next(1) :
+      \ CheckBackspace() ? "\<Tab>" :
+      \ coc#refresh()
+legacy inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+
+# coc 定义跳转
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+
+# ============================================================================
+# 自动命令
+# ============================================================================
+
+augroup vimrc_autocmds
+    autocmd!
+    
+    # 自动保存折叠
+    autocmd BufWinLeave *.* silent! mkview
+    autocmd BufWinEnter *.* silent! loadview
+    
+    # 打开文件时跳转到上次位置
+    autocmd BufReadPost *
+        \ if line("'\"") > 1 && line("'\"") <= line("$") |
+        \   exe "normal! g'\"" |
+        \ endif
+    
+    # 自动删除行尾空格
+    autocmd BufWritePre * :%s/\s\+$//e
+    
+    # 文件类型特定设置
+    autocmd FileType python setlocal tabstop=4 shiftwidth=4 expandtab
+    autocmd FileType javascript,typescript,json setlocal tabstop=2 shiftwidth=2 expandtab
+    autocmd FileType html,css,scss setlocal tabstop=2 shiftwidth=2 expandtab
+    autocmd FileType go setlocal tabstop=4 shiftwidth=4 noexpandtab
+    autocmd FileType markdown setlocal wrap linebreak
+    
+augroup END
+
+# ============================================================================
+# 辅助函数
+# ============================================================================
+
+# coc.nvim Tab 补全辅助函数
+legacy function! CheckBackspace() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+# 显示当前配置路径
+def ShowVimPaths()
+    echo 'Config: ' .. vim_config
+    echo 'Data: ' .. vim_data
+    echo 'State: ' .. vim_state
+    echo 'Cache: ' .. vim_cache
+enddef
+
+command! VimPaths call ShowVimPaths()
+
+# ============================================================================
+# 结束
+# ============================================================================
+
+# 欢迎信息
+echo 'Vim9 配置加载完成！'
