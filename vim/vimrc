@@ -106,6 +106,7 @@ Plug 'ryanoasis/vim-devicons'                # 文件图标（需要 Nerd Font�
 Plug 'morhetz/gruvbox'                       # Gruvbox 主题
 Plug 'dracula/vim', { 'as': 'dracula' }      # Dracula 主题
 Plug 'joshdick/onedark.vim'                  # One Dark 主题
+Plug 'catppuccin/vim', { 'as': 'catppuccin' } #Catppuccin 主题
 
 # --- Git 集成 ---
 Plug 'tpope/vim-fugitive'                    # Git 命令
@@ -193,10 +194,33 @@ set clipboard=unnamed,unnamedplus  # 系统剪贴板
 # 设置背景和配色方案
 set background=dark
 try
-    colorscheme gruvbox
+    colorscheme catppuccin_mocha
 catch
     colorscheme desert
 endtry
+
+# 设置透明背景（清除常用高亮组的背景色）
+const groups = [
+    'Normal',
+    'NormalNC',
+    'SignColumn',
+    'EndOfBuffer',
+    'MsgArea',
+    'LineNr',
+    'CursorLineNr',
+    'Folded',
+    'FoldColumn',
+    'VertSplit',
+    'StatusLine',
+    'StatusLineNC',
+    'TabLine',
+    'TabLineFill',
+    'TabLineSel',
+]
+
+for g in groups
+    exe 'hi ' .. g .. ' guibg=NONE ctermbg=NONE'
+endfor
 
 # ============================================================================
 # 插件配置
@@ -209,7 +233,7 @@ g:NERDTreeIgnore = ['^\.git$', '^\.DS_Store$']
 g:NERDTreeWinSize = 30
 
 # --- airline 配置 ---
-g:airline_theme = 'gruvbox'
+g:airline_theme = 'catppuccin_mocha'
 g:airline_powerline_fonts = 1
 g:airline#extensions#tabline#enabled = 1
 g:airline#extensions#tabline#formatter = 'unique_tail'
@@ -311,27 +335,27 @@ nmap <silent> gr <Plug>(coc-references)
 
 augroup vimrc_autocmds
     autocmd!
-    
+
     # 自动保存折叠
     autocmd BufWinLeave *.* silent! mkview
     autocmd BufWinEnter *.* silent! loadview
-    
+
     # 打开文件时跳转到上次位置
     autocmd BufReadPost *
         \ if line("'\"") > 1 && line("'\"") <= line("$") |
         \   exe "normal! g'\"" |
         \ endif
-    
+
     # 自动删除行尾空格
     autocmd BufWritePre * :%s/\s\+$//e
-    
+
     # 文件类型特定设置
     autocmd FileType python setlocal tabstop=4 shiftwidth=4 expandtab
     autocmd FileType javascript,typescript,json setlocal tabstop=2 shiftwidth=2 expandtab
     autocmd FileType html,css,scss setlocal tabstop=2 shiftwidth=2 expandtab
     autocmd FileType go setlocal tabstop=4 shiftwidth=4 noexpandtab
     autocmd FileType markdown setlocal wrap linebreak
-    
+
 augroup END
 
 # ============================================================================
@@ -359,4 +383,4 @@ command! VimPaths call ShowVimPaths()
 # ============================================================================
 
 # 欢迎信息
-echo 'Vim9 配置加载完成！'
+#echo 'Vim9 配置加载完成！'
